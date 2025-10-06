@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Outside Bus Runs</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4 text-center">Outside Bus Runs</h1>
+    <table class="w-full text-sm border-collapse">
+      <thead class="bg-gray-700">
+        <tr>
+          <th class="border px-2 py-1">Date</th>
+          <th class="border px-2 py-1">Time</th>
+          <th class="border px-2 py-1">Group</th>
+          <th class="border px-2 py-1">Destination</th>
+          <th class="border px-2 py-1">Driver</th>
+          <th class="border px-2 py-1">Bus</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in runs %}
+        <tr class="bg-gray-800 hover:bg-gray-700">
+          <td class="border px-2 py-1">{{ run.run_date }}</td>
+          <td class="border px-2 py-1">{{ run.run_time }}</td>
+          <td class="border px-2 py-1">{{ run.group_name }}</td>
+          <td class="border px-2 py-1">{{ run.destination }}</td>
+          <td class="border px-2 py-1">{{ run.driver }}</td>
+          <td class="border px-2 py-1">{{ run.bus_number }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
