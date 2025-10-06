@@ -69,7 +69,7 @@ def logout():
 @app.route("/")
 def index():
     with get_db() as conn:
-        buses = conn.execute("SELECT * FROM buses ORDER BY bus_number").fetchall()
+        buses = conn.execute("SELECT * FROM buses ORDER BY CAST(bus_number AS INTEGER)").fetchall()
     return render_template("index.html", buses=buses)
 
 @app.route("/runs")
@@ -101,7 +101,7 @@ def admin():
             conn.commit()
             return redirect(url_for("admin"))
 
-        buses = conn.execute("SELECT * FROM buses ORDER BY bus_number").fetchall()
+        buses = conn.execute("SELECT * FROM buses ORDER BY CAST(bus_number AS INTEGER)").fetchall()
         runs_data = conn.execute("SELECT * FROM runs ORDER BY run_date, run_time").fetchall()
     return render_template("admin.html", buses=buses, runs=runs_data)
 
