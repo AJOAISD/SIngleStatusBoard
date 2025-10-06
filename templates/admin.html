@@ -12,6 +12,7 @@
       <a href="/logout" class="text-red-400 hover:underline">Logout</a>
     </div>
 
+    <!-- Add New Bus -->
     <h2 class="text-xl font-semibold mb-2">Manage Buses</h2>
     <form method="POST" class="flex flex-wrap gap-2 mb-4">
       <input type="hidden" name="action" value="add">
@@ -26,6 +27,7 @@
       <button class="bg-green-600 px-2 py-1 rounded hover:bg-green-700">Add</button>
     </form>
 
+    <!-- Bus Table -->
     <table class="w-full text-sm border-collapse mb-8">
       <thead class="bg-gray-700">
         <tr>
@@ -33,34 +35,38 @@
           <th class="border px-2 py-1">Driver</th>
           <th class="border px-2 py-1">Status</th>
           <th class="border px-2 py-1">Notes</th>
-          <th class="border px-2 py-1">Actions</th>
+          <th class="border px-2 py-1">Delete</th>
         </tr>
       </thead>
       <tbody>
         {% for bus in buses %}
-        <tr class="bg-gray-800 hover:bg-gray-700">
-          <form method="POST">
-            <input type="hidden" name="bus_id" value="{{ bus.id }}">
-            <td class="border px-2 py-1">{{ bus.bus_number }}</td>
-            <td class="border px-2 py-1"><input type="text" name="driver" value="{{ bus.driver }}" class="border rounded p-1 w-full"></td>
-            <td class="border px-2 py-1">
-              <select name="status" class="border rounded p-1 w-full">
-                <option {% if bus.status=='On Route' %}selected{% endif %}>On Route</option>
-                <option {% if bus.status=='Delayed' %}selected{% endif %}>Delayed</option>
-                <option {% if bus.status=='In Garage' %}selected{% endif %}>In Garage</option>
-              </select>
-            </td>
-            <td class="border px-2 py-1"><input type="text" name="notes" value="{{ bus.notes }}" class="border rounded p-1 w-full"></td>
-            <td class="border px-2 py-1 flex gap-1">
-              <button name="action" value="update" class="bg-blue-600 px-2 py-1 rounded hover:bg-blue-700">Update</button>
-              <button name="action" value="delete" class="bg-red-600 px-2 py-1 rounded hover:bg-red-700">Delete</button>
-            </td>
-          </form>
+        <tr class="bg-gray-800 hover:bg-gray-700" data-bus-id="{{ bus.id }}">
+          <td class="border px-2 py-1">{{ bus.bus_number }}</td>
+          <td class="border px-2 py-1">
+            <input type="text" data-field="driver" value="{{ bus.driver }}" class="border rounded p-1 w-full bg-gray-900 text-white">
+          </td>
+          <td class="border px-2 py-1">
+            <select data-field="status" class="border rounded p-1 w-full bg-gray-900 text-white">
+              <option {% if bus.status=='On Route' %}selected{% endif %}>On Route</option>
+              <option {% if bus.status=='Delayed' %}selected{% endif %}>Delayed</option>
+              <option {% if bus.status=='In Garage' %}selected{% endif %}>In Garage</option>
+            </select>
+          </td>
+          <td class="border px-2 py-1">
+            <input type="text" data-field="notes" value="{{ bus.notes }}" class="border rounded p-1 w-full bg-gray-900 text-white">
+          </td>
+          <td class="border px-2 py-1 text-center">
+            <form method="POST">
+              <input type="hidden" name="bus_id" value="{{ bus.id }}">
+              <button name="action" value="delete" class="bg-red-600 px-2 py-1 rounded hover:bg-red-700">X</button>
+            </form>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
 
+    <!-- Outside Bus Runs -->
     <h2 class="text-xl font-semibold mb-2">Outside Bus Runs</h2>
     <form method="POST" class="flex flex-wrap gap-2 mb-4">
       <input type="hidden" name="action" value="add_run">
@@ -82,7 +88,7 @@
           <th class="border px-2 py-1">Destination</th>
           <th class="border px-2 py-1">Driver</th>
           <th class="border px-2 py-1">Bus</th>
-          <th class="border px-2 py-1">Action</th>
+          <th class="border px-2 py-1">Delete</th>
         </tr>
       </thead>
       <tbody>
@@ -96,8 +102,8 @@
             <td class="border px-2 py-1">{{ run.destination }}</td>
             <td class="border px-2 py-1">{{ run.driver }}</td>
             <td class="border px-2 py-1">{{ run.bus_number }}</td>
-            <td class="border px-2 py-1">
-              <button name="action" value="delete_run" class="bg-red-600 px-2 py-1 rounded hover:bg-red-700">Delete</button>
+            <td class="border px-2 py-1 text-center">
+              <button name="action" value="delete_run" class="bg-red-600 px-2 py-1 rounded hover:bg-red-700">X</button>
             </td>
           </form>
         </tr>
@@ -105,5 +111,16 @@
       </tbody>
     </table>
   </div>
-</body>
-</html>
+
+  <script>
+    document.querySelectorAll('input[data-field], select[data-field]').forEach(el => {
+      el.addEventListener('change', async e => {
+        const row = e.target.closest('tr');
+        const busId = row.dataset.busId;
+        const field = e.target.dataset.field;
+        const value = e.target.value;
+
+        const res = await fetch('/update_bus_field', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ bus_id: busId, fie_
