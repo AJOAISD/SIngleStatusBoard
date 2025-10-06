@@ -1,56 +1,64 @@
 #!/bin/bash
-APP_DIR="/home/ubuntu/busboard"
-DOMAIN="your_domain_or_ip"
-PORT=8000
+set -e
 
-sudo apt update && sudo apt install -y python3 python3-venv python3-pip nginx git sqlite3
+# CONFIG
+REPO_URL="https://github.com/YOUR_USERNAME/bus-status-board.git"
+PROJECT_DIR="/opt/busboard"
+SERVICE_NAME="busboard"
 
-if [ ! -d "$APP_DIR" ]; then
-  mkdir -p "$APP_DIR"
+echo "=== Installing dependencies ==="
+sudo apt update
+sudo apt install -y python3 python3-venv nginx git
+
+echo "=== Cloning/updating repository ==="
+if [ ! -d "$PROJECT_DIR" ]; then
+  sudo git clone $REPO_URL $PROJECT_DIR
+else
+  cd $PROJECT_DIR
+  sudo git pull
 fi
 
-cd "$APP_DIR"
-
-python3 -m venv venv
+cd $PROJECT_DIR
+sudo python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt || pip install flask gunicorn
-deactivate
+pip install -r requirements.txt
 
-# Create systemd service
-sudo bash -c "cat > /etc/systemd/system/busboard.service" <<EOL
+echo "=== Setting up systemd service ==="
+sudo tee /etc/systemd/system/${SERVICE_NAME}.service > /dev/null <<EOF
 [Unit]
-Description=Bus Board Flask App
+Description=Bus Status Board
 After=network.target
 
 [Service]
-User=ubuntu
-WorkingDirectory=$APP_DIR
-Environment="PATH=$APP_DIR/venv/bin"
-ExecStart=$APP_DIR/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:$PORT app:app
+User=www-data
+WorkingDirectory=$PROJECT_DIR
+ExecStart=$PROJECT_DIR/venv/bin/gunicorn --workers 3 --bind unix:$PROJECT_DIR/busboard.sock app:app
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
-EOL
+EOF
 
 sudo systemctl daemon-reload
-sudo systemctl enable busboard
-sudo systemctl start busboard
+sudo systemctl enable ${SERVICE_NAME}
+sudo systemctl restart ${SERVICE_NAME}
 
-# NGINX config
-sudo bash -c "cat > /etc/nginx/sites-available/busboard" <<EOL
+echo "=== Configuring NGINX ==="
+sudo tee /etc/nginx/sites-available/${SERVICE_NAME} > /dev/null <<EOF
 server {
     listen 80;
-    server_name $DOMAIN;
+    server_name _;
 
     location / {
-        proxy_pass http://127.0.0.1:$PORT;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        include proxy_params;
+        proxy_pass http://unix:$PROJECT_DIR/busboard.sock;
     }
 }
-EOL
+EOF
 
-sudo ln -sf /etc/nginx/sites-available/busboard /etc/nginx/sites-enabled/
-sudo nginx -
+sudo ln -sf /etc/nginx/sites-available/${SERVICE_NAME} /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+
+echo "=== Deployment complete! ==="
+echo "Visit: http://<your_server_ip>/"
