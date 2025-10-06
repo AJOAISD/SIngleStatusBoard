@@ -75,7 +75,19 @@ def index():
 @app.route("/runs")
 def runs():
     with get_db() as conn:
-        runs_data = conn.execute("SELECT * FROM runs ORDER BY run_date, run_time").fetchall()
+        # Format run_time to AM/PM for display, keep raw time for ordering
+        runs_data = conn.execute("""
+            SELECT id,
+                   run_date,
+                   run_time AS run_time_raw,
+                   ltrim(strftime('%I:%M %p', run_time), '0') AS run_time,
+                   group_name,
+                   destination,
+                   driver,
+                   bus_number
+            FROM runs
+            ORDER BY run_date, time(run_time_raw)
+        """).fetchall()
     return render_template("runs.html", runs=runs_data)
 
 @app.route("/admin", methods=["GET", "POST"])
@@ -102,7 +114,19 @@ def admin():
             return redirect(url_for("admin"))
 
         buses = conn.execute("SELECT * FROM buses ORDER BY CAST(bus_number AS INTEGER)").fetchall()
-        runs_data = conn.execute("SELECT * FROM runs ORDER BY run_date, run_time").fetchall()
+        # Format run_time to AM/PM for display; keep raw time as run_time_raw so ordering is correct
+        runs_data = conn.execute("""
+            SELECT id,
+                   run_date,
+                   run_time AS run_time_raw,
+                   ltrim(strftime('%I:%M %p', run_time), '0') AS run_time,
+                   group_name,
+                   destination,
+                   driver,
+                   bus_number
+            FROM runs
+            ORDER BY run_date, time(run_time_raw)
+        """).fetchall()
     return render_template("admin.html", buses=buses, runs=runs_data)
 
 # ---------- AJAX endpoint for inline updates ----------
