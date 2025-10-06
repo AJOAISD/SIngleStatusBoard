@@ -123,4 +123,14 @@
         const res = await fetch('/update_bus_field', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ bus_id: busId, fie_
+          body: JSON.stringify({ bus_id: busId, field, value })
+        });
+
+        if (!res.ok) {
+          alert('Failed to update. Please try again.');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

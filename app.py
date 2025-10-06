@@ -92,4 +92,32 @@ def admin():
             elif action == "delete":
                 c.execute("DELETE FROM buses WHERE id=?", (request.form["bus_id"],))
             elif action == "add_run":
-                c.execute("""INSERT INTO runs (run_date, run_time, group_name, dest_
+                c.execute("""INSERT INTO runs (run_date, run_time, group_name, destination, driver, bus_number)
+                             VALUES (?, ?, ?, ?, ?, ?)""",
+                          (request.form["run_date"], request.form["run_time"], request.form["group_name"],
+                           request.form["destination"], request.form["driver"], request.form["bus_number"]))
+            elif action == "delete_run":
+                c.execute("DELETE FROM runs WHERE id=?", (request.form["run_id"],))
+            conn.commit()
+            return redirect(url_for("admin"))
+
+        buses = conn.execute("SELECT * FROM buses ORDER BY bus_number").fetchall()
+        runs_data = conn.execute("SELECT * FROM runs ORDER BY run_date, run_time").fetchall()
+    return render_template("admin.html", buses=buses, runs=runs_data)
+
+# ---------- AJAX endpoint for inline updates ----------
+@app.route("/update_bus_field", methods=["POST"])
+@login_required
+def update_bus_field():
+    data = request.get_json()
+    bus_id = data.get("bus_id")
+    field = data.get("field")
+    value = data.get("value")
+
+    if field not in ["driver", "status", "notes"]:
+        return jsonify({"success": False, "error": "Invalid field"})
+
+    with get_db() as conn:
+        conn.execute(f"UPDATE buses SET {field}=? WHERE id=?", (value, bus_id))
+        conn.commit()
+    return jsonify({"success": True})
