@@ -22,8 +22,8 @@
           <th class="border px-3 py-2">Group</th>
           <th class="border px-3 py-2">Destination</th>
           <th class="border px-3 py-2">Driver</th>
-          <th class="border px-3 py-2">Sub Driver</th>
           <th class="border px-3 py-2">Bus</th>
+          <th class="border px-3 py-2">Sub Driver</th>
         </tr>
       </thead>
       <tbody>
@@ -33,10 +33,17 @@
           <td class="border px-3 py-2">{{ run.day_of_week }}</td>
           <td class="border px-3 py-2">{{ run.run_time }}</td>
           <td class="border px-3 py-2">{{ run.group_name }}</td>
-          <td class="border px-3 py-2">{{ run.destination }}</td>
+          <td class="border px-3 py-2">
+            {{ run.destination }}
+            <a href="/run_qr/{{ run.id }}" target="_blank" class="inline-block ml-2 align-middle" title="Open QR for Google Maps">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v4a1 1 0 001 1h4M21 7v4a1 1 0 01-1 1h-4M3 17v-4a1 1 0 011-1h4m10 6v-4a1 1 0 00-1-1h-4" />
+              </svg>
+            </a>
+          </td>
           <td class="border px-3 py-2">{{ run.driver }}</td>
-          <td class="border px-3 py-2">{{ run.sub_driver }}</td>
           <td class="border px-3 py-2">{{ run.bus_number }}</td>
+          <td class="border px-3 py-2">{{ run.sub_driver }}</td>
         </tr>
         {% endfor %}
       </tbody>

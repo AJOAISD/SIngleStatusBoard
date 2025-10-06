@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ---------- CONFIG - EDIT THESE ----------
-REPO_URL="https://github.com/YOUR_USERNAME/YOUR_REPO.git"   # <-- set your GitHub repo
+REPO_URL="https://github.com/AJOAITC/SIngleStatusBoard.git"   # <-- set your GitHub repo
 PROJECT_DIR="/opt/busboard"                                 # <-- where to install
 SERVICE_NAME="busboard"                                     # systemd & socket name
 USER="www-data"                                             # service user (nginx user)
@@ -12,9 +12,12 @@ BRANCH="main"                                               # branch to pull
 
 echo "=== Deploying ${SERVICE_NAME} from ${REPO_URL} to ${PROJECT_DIR} ==="
 
-# Install system packages
+# Install system packages (include build tools and image libs required by Pillow)
 sudo apt update
-sudo apt install -y python3 python3-venv python3-pip nginx git
+sudo apt install -y \
+  python3 python3-venv python3-pip python3-dev build-essential \
+  nginx git pkg-config \
+  libjpeg-dev zlib1g-dev libfreetype6-dev liblcms2-dev libopenjp2-7-dev libtiff5-dev
 
 # Clone or update repo
 if [ ! -d "$PROJECT_DIR" ]; then

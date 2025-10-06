@@ -107,10 +107,10 @@
         <input type="hidden" name="action" value="add_run" />
         <input name="run_date" type="date" required class="border rounded p-2" />
         <input name="run_time" type="time" required class="border rounded p-2" />
-  <input name="group_name" placeholder="Group" required class="border rounded p-2" />
+        <input name="group_name" placeholder="Group" required class="border rounded p-2" />
         <input name="destination" placeholder="Destination" required class="border rounded p-2" />
         <input name="driver" placeholder="Driver" class="border rounded p-2" />
-  <input name="sub_driver" placeholder="Sub Driver" class="border rounded p-2" />
+        <input name="sub_driver" placeholder="Sub Driver" class="border rounded p-2" />
         <input name="bus_number" placeholder="Bus #" class="border rounded p-2 w-28" />
         <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Add Run</button>
       </form>
@@ -132,14 +132,14 @@
           </thead>
           <tbody>
             {% for run in runs %}
-            <tr class="odd:bg-white even:bg-gray-50">
-              <td class="border px-2 py-1">{{ run['run_date'] }}</td>
-              <td class="border px-2 py-1">{{ run['run_time'] }}</td>
-              <td class="border px-2 py-1">{{ run['group_name'] }}</td>
-              <td class="border px-2 py-1">{{ run['destination'] }}</td>
-              <td class="border px-2 py-1">{{ run['driver'] }}</td>
-              <td class="border px-2 py-1">{{ run['sub_driver'] }}</td>
-              <td class="border px-2 py-1">{{ run['bus_number'] }}</td>
+            <tr class="odd:bg-white even:bg-gray-50" data-run-id="{{ run['id'] }}">
+              <td class="border px-2 py-1"><input data-field="run_date" type="date" value="{{ run['run_date_raw'] }}" class="w-full border rounded p-1" /></td>
+              <td class="border px-2 py-1"><input data-field="run_time" type="time" value="{{ run['run_time_raw'] }}" class="w-full border rounded p-1" /></td>
+              <td class="border px-2 py-1"><input data-field="group_name" value="{{ run['group_name'] }}" class="w-full border rounded p-1" /></td>
+              <td class="border px-2 py-1"><input data-field="destination" value="{{ run['destination'] }}" class="w-full border rounded p-1" /></td>
+              <td class="border px-2 py-1"><input data-field="driver" value="{{ run['driver'] }}" class="w-full border rounded p-1" /></td>
+              <td class="border px-2 py-1"><input data-field="sub_driver" value="{{ run['sub_driver'] }}" class="w-full border rounded p-1" /></td>
+              <td class="border px-2 py-1"><input data-field="bus_number" value="{{ run['bus_number'] }}" class="w-full border rounded p-1" /></td>
               <td class="border px-2 py-1 text-center">
                 <form method="POST" onsubmit="return confirm('Delete this run?');">
                   <input type="hidden" name="action" value="delete_run" />
@@ -150,7 +150,7 @@
             </tr>
             {% else %}
             <tr>
-              <td class="border px-2 py-4 text-center" colspan="7">No runs scheduled.</td>
+              <td class="border px-2 py-4 text-center" colspan="8">No runs scheduled.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -161,23 +161,34 @@
   </div>
 
 <script>
-  // Auto-save inline fields (driver, status, notes)
+  // Auto-save inline fields for buses and runs
   document.querySelectorAll('input[data-field], select[data-field]').forEach(el => {
     el.addEventListener('change', async (e) => {
       const row = e.target.closest('tr');
-      const busId = row.dataset.busId;
+      const busId = row ? row.dataset.busId : null;
+      const runId = row ? row.dataset.runId : null;
       const field = e.target.dataset.field;
       const value = e.target.value;
 
       try {
-        const res = await fetch('/update_bus_field', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ bus_id: busId, field, value })
-        });
+        let res, json;
+        if (busId) {
+          res = await fetch('/update_bus_field', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ bus_id: busId, field, value })
+          });
+          json = await res.json();
+        } else if (runId) {
+          res = await fetch('/update_run_field', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ run_id: runId, field, value })
+          });
+          json = await res.json();
+        }
 
-        const json = await res.json();
-        if (!json.success) {
+        if (json && !json.success) {
           alert('Update failed: ' + (json.error || 'unknown'));
         }
       } catch (err) {

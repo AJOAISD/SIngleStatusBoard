@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
-import sqlite3, os
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file, abort
+import sqlite3, os, io, urllib.parse
+import qrcode
+from PIL import Image
 
 app = Flask(__name__)
 app.secret_key = "CHANGE_THIS_TO_A_SECURE_KEY"
@@ -155,11 +157,37 @@ def admin():
                    group_name,
                    destination,
                    driver,
+                   sub_driver,
                    bus_number
             FROM runs
             ORDER BY run_date_raw, time(run_time_raw)
         """).fetchall()
     return render_template("admin.html", buses=buses, runs=runs_data)
+
+
+@app.route('/run_qr/<int:run_id>')
+def run_qr(run_id):
+    # Generate a QR code that opens Google Maps search for the run's destination
+    with get_db() as conn:
+        r = conn.execute('SELECT destination FROM runs WHERE id=?', (run_id,)).fetchone()
+        if not r:
+            return abort(404)
+        destination = r['destination']
+
+    # Build Google Maps search URL (encode the destination)
+    params = urllib.parse.quote_plus(destination)
+    maps_url = f'https://www.google.com/maps/search/?api=1&query={params}'
+
+    # Generate QR code PNG
+    qr = qrcode.QRCode(box_size=6, border=2)
+    qr.add_data(maps_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color='black', back_color='white')
+
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    return send_file(buf, mimetype='image/png')
 
 # ---------- AJAX endpoint for inline updates ----------
 @app.route("/update_bus_field", methods=["POST"])
@@ -175,5 +203,34 @@ def update_bus_field():
 
     with get_db() as conn:
         conn.execute(f"UPDATE buses SET {field}=? WHERE id=?", (value, bus_id))
+        conn.commit()
+    return jsonify({"success": True})
+
+
+@app.route("/update_run_field", methods=["POST"])
+@login_required
+def update_run_field():
+    data = request.get_json()
+    run_id = data.get("run_id")
+    field = data.get("field")
+    value = data.get("value")
+
+    # Only allow specific fields to be updated inline
+    allowed = {"run_date", "run_time", "group_name", "destination", "driver", "sub_driver", "bus_number"}
+    if field not in allowed:
+        return jsonify({"success": False, "error": "Invalid field"})
+
+    # Basic validation: ensure dates/times use expected formats for run_date/run_time
+    if field == "run_date":
+        # expecting YYYY-MM-DD from <input type=date>
+        if not isinstance(value, str) or len(value.split("-")) != 3:
+            return jsonify({"success": False, "error": "Invalid date format"})
+    if field == "run_time":
+        # expecting HH:MM from <input type=time>
+        if not isinstance(value, str) or len(value.split(":")) < 2:
+            return jsonify({"success": False, "error": "Invalid time format"})
+
+    with get_db() as conn:
+        conn.execute(f"UPDATE runs SET {field}=? WHERE id=?", (value, run_id))
         conn.commit()
     return jsonify({"success": True})
