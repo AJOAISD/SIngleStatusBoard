@@ -107,9 +107,10 @@
         <input type="hidden" name="action" value="add_run" />
         <input name="run_date" type="date" required class="border rounded p-2" />
         <input name="run_time" type="time" required class="border rounded p-2" />
-        <input name="group_name" placeholder="Group" required class="border rounded p-2" />
+  <input name="group_name" placeholder="Group" required class="border rounded p-2" />
         <input name="destination" placeholder="Destination" required class="border rounded p-2" />
         <input name="driver" placeholder="Driver" class="border rounded p-2" />
+  <input name="sub_driver" placeholder="Sub Driver" class="border rounded p-2" />
         <input name="bus_number" placeholder="Bus #" class="border rounded p-2 w-28" />
         <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Add Run</button>
       </form>
@@ -124,6 +125,7 @@
               <th class="border px-2 py-2">Group</th>
               <th class="border px-2 py-2">Destination</th>
               <th class="border px-2 py-2">Driver</th>
+              <th class="border px-2 py-2">Sub Driver</th>
               <th class="border px-2 py-2">Bus</th>
               <th class="border px-2 py-2">Delete</th>
             </tr>
@@ -136,6 +138,7 @@
               <td class="border px-2 py-1">{{ run['group_name'] }}</td>
               <td class="border px-2 py-1">{{ run['destination'] }}</td>
               <td class="border px-2 py-1">{{ run['driver'] }}</td>
+              <td class="border px-2 py-1">{{ run['sub_driver'] }}</td>
               <td class="border px-2 py-1">{{ run['bus_number'] }}</td>
               <td class="border px-2 py-1 text-center">
                 <form method="POST" onsubmit="return confirm('Delete this run?');">

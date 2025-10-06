@@ -11,9 +11,10 @@ USERNAME = "admin"
 PASSWORD = "password123"
 
 def init_db():
-    if not os.path.exists(DB_FILE):
-        with sqlite3.connect(DB_FILE) as conn:
-            c = conn.cursor()
+    first_time = not os.path.exists(DB_FILE)
+    with sqlite3.connect(DB_FILE) as conn:
+        c = conn.cursor()
+        if first_time:
             c.execute("""
                 CREATE TABLE IF NOT EXISTS buses (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,10 +32,18 @@ def init_db():
                     group_name TEXT NOT NULL,
                     destination TEXT NOT NULL,
                     driver TEXT NOT NULL,
+                    sub_driver TEXT DEFAULT '',
                     bus_number TEXT NOT NULL
                 );
             """)
-            conn.commit()
+        # If DB already exists, ensure runs table has sub_driver column (migration)
+        else:
+            c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='runs'")
+            if c.fetchone():
+                cols = [row[1] for row in c.execute("PRAGMA table_info(runs)").fetchall()]
+                if 'sub_driver' not in cols:
+                    c.execute("ALTER TABLE runs ADD COLUMN sub_driver TEXT DEFAULT ''")
+        conn.commit()
 
 def get_db():
     conn = sqlite3.connect(DB_FILE)
@@ -75,18 +84,30 @@ def index():
 @app.route("/runs")
 def runs():
     with get_db() as conn:
-        # Format run_time to AM/PM for display, keep raw time for ordering
+        # Include formatted date (MM/DD/YYYY) and formatted run_time (AM/PM) for display;
+        # keep raw date/time for correct ordering
         runs_data = conn.execute("""
             SELECT id,
-                   run_date,
+                   run_date AS run_date_raw,
+                   strftime('%m/%d/%Y', run_date) AS run_date,
+                   CASE strftime('%w', run_date)
+                       WHEN '0' THEN 'Sunday'
+                       WHEN '1' THEN 'Monday'
+                       WHEN '2' THEN 'Tuesday'
+                       WHEN '3' THEN 'Wednesday'
+                       WHEN '4' THEN 'Thursday'
+                       WHEN '5' THEN 'Friday'
+                       WHEN '6' THEN 'Saturday'
+                   END AS day_of_week,
                    run_time AS run_time_raw,
                    ltrim(strftime('%I:%M %p', run_time), '0') AS run_time,
                    group_name,
                    destination,
                    driver,
+                   sub_driver,
                    bus_number
             FROM runs
-            ORDER BY run_date, time(run_time_raw)
+            ORDER BY run_date_raw, time(run_time_raw)
         """).fetchall()
     return render_template("runs.html", runs=runs_data)
 
@@ -104,20 +125,31 @@ def admin():
             elif action == "delete":
                 c.execute("DELETE FROM buses WHERE id=?", (request.form["bus_id"],))
             elif action == "add_run":
-                c.execute("""INSERT INTO runs (run_date, run_time, group_name, destination, driver, bus_number)
-                             VALUES (?, ?, ?, ?, ?, ?)""",
+                c.execute("""INSERT INTO runs (run_date, run_time, group_name, destination, driver, sub_driver, bus_number)
+                             VALUES (?, ?, ?, ?, ?, ?, ?)""",
                           (request.form["run_date"], request.form["run_time"], request.form["group_name"],
-                           request.form["destination"], request.form["driver"], request.form["bus_number"]))
+                           request.form["destination"], request.form["driver"], request.form.get("sub_driver", ""), request.form["bus_number"]))
             elif action == "delete_run":
                 c.execute("DELETE FROM runs WHERE id=?", (request.form["run_id"],))
             conn.commit()
             return redirect(url_for("admin"))
 
         buses = conn.execute("SELECT * FROM buses ORDER BY CAST(bus_number AS INTEGER)").fetchall()
-        # Format run_time to AM/PM for display; keep raw time as run_time_raw so ordering is correct
+        # Include formatted date (MM/DD/YYYY) and formatted run_time (AM/PM) for display;
+        # keep raw date/time for correct ordering
         runs_data = conn.execute("""
             SELECT id,
-                   run_date,
+                   run_date AS run_date_raw,
+                   strftime('%m/%d/%Y', run_date) AS run_date,
+                   CASE strftime('%w', run_date)
+                       WHEN '0' THEN 'Sunday'
+                       WHEN '1' THEN 'Monday'
+                       WHEN '2' THEN 'Tuesday'
+                       WHEN '3' THEN 'Wednesday'
+                       WHEN '4' THEN 'Thursday'
+                       WHEN '5' THEN 'Friday'
+                       WHEN '6' THEN 'Saturday'
+                   END AS day_of_week,
                    run_time AS run_time_raw,
                    ltrim(strftime('%I:%M %p', run_time), '0') AS run_time,
                    group_name,
@@ -125,7 +157,7 @@ def admin():
                    driver,
                    bus_number
             FROM runs
-            ORDER BY run_date, time(run_time_raw)
+            ORDER BY run_date_raw, time(run_time_raw)
         """).fetchall()
     return render_template("admin.html", buses=buses, runs=runs_data)
 
