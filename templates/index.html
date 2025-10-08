@@ -30,9 +30,9 @@
           <td class="border px-3 py-2">
             {% if bus.status == "On Route" %}
               <span class="bg-green-600 px-3 py-1 rounded">{{ bus.status }}</span>
-            {% elif bus.status == "Delayed" %}
-              <span class="bg-red-600 px-3 py-1 rounded">{{ bus.status }}</span>
             {% elif bus.status == "In Garage" %}
+              <span class="bg-red-600 px-3 py-1 rounded">{{ bus.status }}</span>
+            {% elif bus.status == "Delayed" %}
               <span class="bg-gray-500 px-3 py-1 rounded">{{ bus.status }}</span>
             {% else %}
               <span class="bg-blue-600 px-3 py-1 rounded">{{ bus.status }}</span>
