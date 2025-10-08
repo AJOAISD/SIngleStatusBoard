@@ -17,8 +17,8 @@
       <thead class="bg-gray-700">
         <tr>
           <th class="border px-3 py-2" style="width: 10%;">Bus</th>
-          <th class="border px-3 py-2" style="width: 30%;">Driver</th>
-          <th class="border px-3 py-2" style="width: 10%;">Status</th>
+          <th class="border px-3 py-2" style="width: 25%;">Driver</th>
+          <th class="border px-3 py-2" style="width: 15%;">Status</th>
           <th class="border px-3 py-2" style="width: 50%;">Notes</th>
         </tr>
       </thead>
@@ -34,6 +34,8 @@
               <span class="bg-red-600 px-3 py-1 rounded">{{ bus.status }}</span>
             {% elif bus.status == "Delayed" %}
               <span class="bg-gray-500 px-3 py-1 rounded">{{ bus.status }}</span>
+            {% elif bus.status == "Out of Service" %}
+              <span class="bg-orange-600 text-white px-3 py-1 rounded">{{ bus.status }}</span>
             {% else %}
               <span class="bg-blue-600 px-3 py-1 rounded">{{ bus.status }}</span>
             {% endif %}

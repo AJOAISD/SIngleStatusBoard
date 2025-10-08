@@ -35,6 +35,7 @@
           <option>On Route</option>
           <option>Delayed</option>
           <option>In Garage</option>
+          <option>Out of Service</option>
         </select>
         <input name="notes" placeholder="Notes (optional)" class="border rounded p-2 flex-1 min-w-[200px]" />
         <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Add Bus</button>
@@ -71,6 +72,7 @@
                   <option {% if bus['status']=="On Route" %}selected{% endif %}>On Route</option>
                   <option {% if bus['status']=="Delayed" %}selected{% endif %}>Delayed</option>
                   <option {% if bus['status']=="In Garage" %}selected{% endif %}>In Garage</option>
+                  <option {% if bus['status']=="Out of Service" %}selected{% endif %}>Out of Service</option>
                 </select>
               </td>
 
