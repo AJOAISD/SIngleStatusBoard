@@ -19,6 +19,7 @@
           <th class="border px-3 py-2">Date</th>
           <th class="border px-3 py-2">Day</th>
           <th class="border px-3 py-2">Time</th>
+          <th class="border px-3 py-2">Return</th>
           <th class="border px-3 py-2">Group</th>
           <th class="border px-3 py-2">Destination</th>
           <th class="border px-3 py-2">Driver</th>
@@ -32,6 +33,7 @@
           <td class="border px-3 py-2">{{ run.run_date }}</td>
           <td class="border px-3 py-2">{{ run.day_of_week }}</td>
           <td class="border px-3 py-2">{{ run.run_time }}</td>
+          <td class="border px-3 py-2">{{ run['return_time'] if run.get('return_time') else '' }}</td>
           <td class="border px-3 py-2">{{ run.group_name }}</td>
           <td class="border px-3 py-2">
             {{ run.destination }}
@@ -41,9 +43,9 @@
               </svg>
             </a>
           </td>
-          <td class="border px-3 py-2">{{ run.driver }}</td>
-          <td class="border px-3 py-2">{{ run.bus_number }}</td>
-          <td class="border px-3 py-2">{{ run.sub_driver }}</td>
+          <td class="border px-3 py-2">{{ run['driver'] }}</td>
+          <td class="border px-3 py-2">{{ run['bus_number'] }}</td>
+          <td class="border px-3 py-2">{{ run['sub_driver'] }}</td>
         </tr>
         {% endfor %}
       </tbody>

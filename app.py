@@ -1,7 +1,20 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file, abort
-import sqlite3, os, io, urllib.parse
-import qrcode
-from PIL import Image
+import logging
+import traceback
+import sys
+
+try:
+    from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file, abort
+    import sqlite3, os, io, urllib.parse
+    import qrcode
+    from PIL import Image
+except Exception:
+    # Print full traceback to stderr so supervised servers / systemd / gunicorn logs capture it.
+    traceback.print_exc(file=sys.stderr)
+    print("Missing or failing import in app.py. Ensure required packages are installed (pip install -r requirements.txt).", file=sys.stderr)
+    raise
+
+# Basic logging for startup diagnostics
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 app.secret_key = "CHANGE_THIS_TO_A_SECURE_KEY"
@@ -31,6 +44,7 @@ def init_db():
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     run_date TEXT NOT NULL,
                     run_time TEXT NOT NULL,
+                    return_time TEXT DEFAULT '',
                     group_name TEXT NOT NULL,
                     destination TEXT NOT NULL,
                     driver TEXT NOT NULL,
@@ -43,8 +57,10 @@ def init_db():
             c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='runs'")
             if c.fetchone():
                 cols = [row[1] for row in c.execute("PRAGMA table_info(runs)").fetchall()]
-                if 'sub_driver' not in cols:
-                    c.execute("ALTER TABLE runs ADD COLUMN sub_driver TEXT DEFAULT ''")
+            if 'sub_driver' not in cols:
+                c.execute("ALTER TABLE runs ADD COLUMN sub_driver TEXT DEFAULT ''")
+            if 'return_time' not in cols:
+                c.execute("ALTER TABLE runs ADD COLUMN return_time TEXT DEFAULT ''")
         conn.commit()
 
 def get_db():
@@ -127,10 +143,10 @@ def admin():
             elif action == "delete":
                 c.execute("DELETE FROM buses WHERE id=?", (request.form["bus_id"],))
             elif action == "add_run":
-                c.execute("""INSERT INTO runs (run_date, run_time, group_name, destination, driver, sub_driver, bus_number)
-                             VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                          (request.form["run_date"], request.form["run_time"], request.form["group_name"],
-                           request.form["destination"], request.form["driver"], request.form.get("sub_driver", ""), request.form["bus_number"]))
+                    c.execute("""INSERT INTO runs (run_date, run_time, return_time, group_name, destination, driver, sub_driver, bus_number)
+                                          VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                                      (request.form["run_date"], request.form["run_time"], request.form.get("return_time", ""), request.form["group_name"],
+                                        request.form["destination"], request.form["driver"], request.form.get("sub_driver", ""), request.form["bus_number"]))
             elif action == "delete_run":
                 c.execute("DELETE FROM runs WHERE id=?", (request.form["run_id"],))
             conn.commit()
@@ -154,6 +170,8 @@ def admin():
                    END AS day_of_week,
                    run_time AS run_time_raw,
                    ltrim(strftime('%I:%M %p', run_time), '0') AS run_time,
+                   return_time AS return_time_raw,
+                   ltrim(strftime('%I:%M %p', return_time), '0') AS return_time,
                    group_name,
                    destination,
                    driver,
@@ -216,7 +234,7 @@ def update_run_field():
     value = data.get("value")
 
     # Only allow specific fields to be updated inline
-    allowed = {"run_date", "run_time", "group_name", "destination", "driver", "sub_driver", "bus_number"}
+    allowed = {"run_date", "run_time", "return_time", "group_name", "destination", "driver", "sub_driver", "bus_number"}
     if field not in allowed:
         return jsonify({"success": False, "error": "Invalid field"})
 
@@ -229,6 +247,10 @@ def update_run_field():
         # expecting HH:MM from <input type=time>
         if not isinstance(value, str) or len(value.split(":")) < 2:
             return jsonify({"success": False, "error": "Invalid time format"})
+    if field == "return_time":
+        # expecting HH:MM from <input type=time>
+        if not isinstance(value, str) or len(value.split(":")) < 2:
+            return jsonify({"success": False, "error": "Invalid return time format"})
 
     with get_db() as conn:
         conn.execute(f"UPDATE runs SET {field}=? WHERE id=?", (value, run_id))

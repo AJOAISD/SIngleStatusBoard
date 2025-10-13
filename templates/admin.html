@@ -108,7 +108,8 @@
       <form method="POST" class="flex flex-wrap gap-2 items-center mb-4" novalidate>
         <input type="hidden" name="action" value="add_run" />
         <input name="run_date" type="date" required class="border rounded p-2" />
-        <input name="run_time" type="time" required class="border rounded p-2" />
+  <input name="run_time" type="time" required class="border rounded p-2" />
+  <input name="return_time" type="time" class="border rounded p-2" />
         <input name="group_name" placeholder="Group" required class="border rounded p-2" />
         <input name="destination" placeholder="Destination" required class="border rounded p-2" />
         <input name="driver" placeholder="Driver" class="border rounded p-2" />
@@ -124,6 +125,7 @@
             <tr>
               <th class="border px-2 py-2">Date</th>
               <th class="border px-2 py-2">Time</th>
+              <th class="border px-2 py-2">Return</th>
               <th class="border px-2 py-2">Group</th>
               <th class="border px-2 py-2">Destination</th>
               <th class="border px-2 py-2">Driver</th>
@@ -137,6 +139,7 @@
             <tr class="odd:bg-white even:bg-gray-50" data-run-id="{{ run['id'] }}">
               <td class="border px-2 py-1"><input data-field="run_date" type="date" value="{{ run['run_date_raw'] }}" class="w-full border rounded p-1" /></td>
               <td class="border px-2 py-1"><input data-field="run_time" type="time" value="{{ run['run_time_raw'] }}" class="w-full border rounded p-1" /></td>
+              <td class="border px-2 py-1"><input data-field="return_time" type="time" value="{{ run.get('return_time', '') }}" class="w-full border rounded p-1" /></td>
               <td class="border px-2 py-1"><input data-field="group_name" value="{{ run['group_name'] }}" class="w-full border rounded p-1" /></td>
               <td class="border px-2 py-1"><input data-field="destination" value="{{ run['destination'] }}" class="w-full border rounded p-1" /></td>
               <td class="border px-2 py-1"><input data-field="driver" value="{{ run['driver'] }}" class="w-full border rounded p-1" /></td>
